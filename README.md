@@ -1,3 +1,4 @@
+https://github.com/Etarvv/weblarek
 # Проектная работа "Веб-ларек"
 
 Стек: HTML, SCSS, TS, Vite
@@ -97,4 +98,57 @@ Presenter - презентер содержит основную логику п
 `on<T extends object>(event: EventName, callback: (data: T) => void): void` - подписка на событие, принимает название события и функцию обработчик.  
 `emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
+##### Данные и модели данных
+Все модели реализованы в папке src/components/models/. Они хранят состояние, управляют данными и предоставляют методы для их изменения.
+
+###### Products – каталог товаров
+Поля:
+
+`items: IProduct[]` - все товары, полученные с сервера.
+`currentItem: IProduct | null` - товар, выбранный для просмотра в модальном окне.
+
+Методы:
+`setItems(items: IProduct[]): void` - заменить весь каталог.
+`getItems(): IProduct[]` - получить все товары.
+`getItemById(id: string): IProduct | undefined` - найти товар по ID.
+`setPreview(item: IProduct): void` - установить товар для превью.
+`getPreview(): IProduct | null` - получить текущий превью-товар.
+
+###### BasketData – корзина
+Поле:
+`items: IProduct[]` - товары, добавленные пользователем.
+
+Методы:
+`getItems(): IProduct[]` - список товаров в корзине.
+`addItem(item: IProduct): void` - добавить товар.
+`delete(id: string): void` - удалить товар по ID.
+`clear(): void` - очистить корзину.
+`getPrice(): number` – общая стоимость.
+`getCountProduct(): number` - количество товаров.
+`inBasket(id: string): boolean` - проверка наличия товара в корзине.
+
+###### Buyer – данные покупателя
+Поля:
+`email, phone, address, payment (TPayment | null)`
+Сеттеры:
+`setEmail, setPhone, setAddress, setPayment`
+Геттеры и утилиты:
+`getBuyerData(): IBuyer` - собрать все данные в объект.
+`clear(): void` - сбросить все поля.
+Валидация:
+`validateEmail()` - проверка формата email.
+`validatePhone()` - проверка телефона.
+`validateAddress()` - адрес.
+`validatePayment()` - выбран ли способ оплаты.
+`validateBuyerData(): TBuyerErrors` - возвращает объект с ошибками для каждого невалидного поля.
+
+###### Слой API – WebLarekAPI
+Класс WebLarekAPI использует базовый Api для общения с сервером.
+Конструктор: `constructor(api: IApi)` – принимает экземпляр Api.
+Методы:
+`async getProducts(): Promise<IProduct[]>`
+→ `GET /product` → возвращает `response.items`(массив товаров).
+
+`async orderProducts(order: IOrder): Promise<IOrderResponse>`
+→ `POST /order` с телом `order` → возвращает `{ id, total }`.
 
