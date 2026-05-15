@@ -89,72 +89,118 @@ Presenter - презентер содержит основную логику п
 ### `EventEmitter`
 Брокер событий. Позволяет подписываться (`on`), генерировать события (`emit`) и создавать триггеры (`trigger`). Используется для всей коммуникации между слоями.
 
-## Модели данных
+## Модели данных (Model)
 
 ### `Products`
 Управляет каталогом товаров.
-- `setItems(items)` - заменяет список, генерирует `products:changed`
-- `getItems()` - возвращает все товары
-- `getItemById(id)` - поиск товара
-- `setPreview(item)` - сохраняет выбранный товар, генерирует `preview:changed`
+
+- `setItems(items: IProduct[]): void` - заменяет список, генерирует событие `products:changed`.  
+- `getItems(): IProduct[]` - возвращает все товары.  
+- `getItemById(id: string): IProduct | undefined` - поиск товара.  
+- `setPreview(item: IProduct): void` - сохраняет выбранный товар, генерирует `preview:changed`.  
+- `getPreview(): IProduct | null` - возвращает текущий выбранный товар.
 
 ### `BasketData`
 Управляет корзиной.
-- `addItem(item)`, `delete(id)`, `clear()` - все изменения генерируют `basket:changed`
-- `getPrice()`, `getCountProduct()`, `inBasket(id)`
+
+- `addItem(item: IProduct): void` - добавляет товар, генерирует `basket:changed`.  
+- `delete(id: string): void` - удаляет товар, генерирует `basket:changed`.  
+- `clear(): void` - очищает корзину, генерирует `basket:changed`.  
+- `getItems(): IProduct[]` - возвращает список товаров в корзине.  
+- `getPrice(): number` - сумма всех цен (товары с `price: null` не учитываются).  
+- `getCountProduct(): number` - количество товаров.  
+- `inBasket(id: string): boolean` - проверяет, есть ли товар в корзине.
 
 ### `Buyer`
-Хранит данные покупателя: `email`, `phone`, `address`, `payment` .
-- сеттеры для каждого поля
-- `getBuyerData()` - возвращает объект `IBuyer`
-- `validate()` - возвращает объект с ошибками (если поле пустое)
-- `clear()` - сброс
+Хранит и валидирует данные покупателя.
+
+- Сеттеры: `setAddress(address: string)`, `setPayment(payment: TPayment)`, `setEmail(email: string)`, `setPhone(phone: string)` — каждый генерирует `buyer:changed`.  
+- `getBuyerData(): IBuyer` - возвращает объект с данными.  
+- `validate(): TBuyerErrors` - возвращает объект с ошибками для незаполненных полей (адрес, способ оплаты, email, телефон).  
+- `clear(): void` - сбрасывает все поля, генерирует `buyer:changed`.
+
+---
 
 ## Компоненты представления (View)
 
 ### `Modal`
 Универсальное модальное окно.
-- `open()`, `close()` - генерируют `modal:open` / `modal:close`
-- `content` - сеттер для замены содержимого
+
+- `open(): void` - добавляет класс `modal_active`, генерирует событие `modal:open`.  
+- `close(): void` - очищает содержимое и убирает класс, генерирует `modal:close`.  
+- `set content(value: HTMLElement)` - заменяет содержимое `.modal__content`.  
+- Закрывается по клику на оверлей или на крестик.
 
 ### `Gallery`
-Контейнер для карточек на главной.
-- `catalog` - сеттер принимает массив HTMLElement и заменяет содержимое
+Контейнер для карточек на главной странице.
+
+- `set catalog(items: HTMLElement[])` - заменяет всё содержимое галереи переданными элементами.
 
 ### `Header`
 Шапка с иконкой корзины и счётчиком.
-- `counter` - сеттер для отображения количества товаров
-- клик по корзине генерирует `basket:open`
+
+- `set counter(value: number)` - отображает количество товаров в корзине.  
+- При клике на иконку корзины генерируется событие `basket:open`.
 
 ### `BasketView`
-Отображение корзины: список товаров, общая сумма, кнопка «Оформить».
-- `items` - массив HTMLElement (карточки корзины)
-- `total` - общая сумма
-- `disabled` - блокировка кнопки, если корзина пуста
-- кнопка генерирует `order:start`
+Отображение корзины.
 
-### `CardView`
-Универсальная карточка товара с тремя вариантами (type: `catalog`, `preview`, `basket`).
-- Поля: `title`, `price` (если null — «Бесценно»), `image`, `category` (с CSS-маппингом), `text` (описание), `index` (для корзины), `buttonText`, `buttonDisabled`
-- Для `catalog` и `preview` принимает `onClick`
-- Для `basket` принимает `onRemove`
+- `set total(amount: number)` - устанавливает общую сумму.  
+- `set items(items: HTMLElement[])` - заполняет список товаров. **Если массив пуст, отображается сообщение «Корзина пуста»**.  
+- `set disabled(state: boolean)` - блокирует/разблокирует кнопку «Оформить».  
+- Кнопка «Оформить» генерирует событие `order:start`.
+
+### `CardView` (и его наследники)
+Универсальная карточка товара. Варианты: `CatalogCard` (для каталога), `PreviewCard` (модальное окно), `BasketCard` (для корзины).
+
+**Общие сеттеры:**  
+- `title: string`  
+- `price: number | null` - если `null`, отображается текст «Бесценно».  
+- `image: string`  
+- `category: string` - автоматически подставляется CSS-класс для фона (маппинг через `categoryMap`).  
+- `description: string` (только для `PreviewCard`)  
+- `buttonText: string` - текст на кнопке.  
+- `buttonDisabled: boolean` - блокирует кнопку.
+
+**Особенности:**  
+- Для товаров с `price === null` в режиме предпросмотра (`PreviewCard`) кнопка автоматически блокируется (`disabled`) и её текст меняется на **«Недоступно**».  
+- `BasketCard` дополнительно имеет `set index(value: number)` - порядковый номер в корзине, и кнопку удаления, которая вызывает переданный `onRemove`.
 
 ### `Order`
 Форма первого шага оформления (способ оплаты + адрес).
-- События при изменении полей: `order.payment:change`, `order.address:change`
-- Событие отправки: `order:submit`
-- Сеттеры: `payment`, `address`, `valid`, `errors`
+
+- События при изменении полей: `order.payment:change`, `order.address:change`.  
+- Событие отправки формы: `order:submit`.  
+- Сеттеры: `payment` (подсвечивает активную кнопку), `address` (заполняет поле ввода), `valid` (активирует кнопку «Далее»), `errors` (показывает сообщение об ошибке).  
+- Кнопка «Далее» активна только когда выбран способ оплаты и введён адрес.
 
 ### `Contacts`
-Форма второго шага (email + телефон).
-- События: `contacts.email:change`, `contacts.phone:change`, `contacts:submit`
-- Сеттеры: `email`, `phone`, `valid`, `errors`
+Форма второго шага (email и телефон).
+
+- События: `contacts.email:change`, `contacts.phone:change`, `contacts:submit`.  
+- Сеттеры: `email`, `phone`, `valid`, `errors`.  
+- Кнопка «Оплатить» активна только когда оба поля заполнены.
 
 ### `SuccessInfo`
-Сообщение об успешной оплате. Принимает `total` и `onClick` для закрытия.
+Сообщение об успешной оплате.
+
+- `set total(value: number)` - отображает списанную сумму.  
+- При клике на кнопку «За новыми покупками!» вызывается переданный `onClick`.
+
+---
 
 ## Слой API
 
-**`WebLarekAPI`** (наследует `Api`):
-- `getProducts()` → `GET /product` → возвращает `IProductResponse` (`{ items, total }`)
-- `orderProducts(order)` → `POST /order` → `IOrderResponse` (`{ id, total }`)
+### `WebLarekAPI` (наследует `Api`)
+
+**Методы:**  
+- `getProducts(): Promise<IProductResponse>` → `GET /product` - получает список товаров.  
+- `orderProducts(order: IOrder): Promise<IOrderResponse>` → `POST /order` - отправляет заказ на сервер, возвращает `{ id, total }`.
+
+---
+
+## Дополнительная информация
+
+- **Корзина пуста:** при отсутствии товаров в корзине вместо списка отображается текст «Корзина пуста», кнопка «Оформить» неактивна.  
+- **Товар без цены:** в модальном окне просмотра такого товара кнопка заблокирована и имеет текст «Недоступно».  
+- **Закрытие модальных окон:** происходит по клику на оверлей или на крестик; содержимое модального окна очищается при закрытии.  

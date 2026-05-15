@@ -8,7 +8,7 @@ interface ISuccesActions {
       onClick: () => void;
 }
 
-export class SuccesInfo extends Component<ISucces> {
+export class SuccessInfo extends Component<ISucces> {
       protected close: HTMLElement;
       protected _total: HTMLElement;
 
@@ -20,9 +20,8 @@ export class SuccesInfo extends Component<ISucces> {
             this._total = container.querySelector(
                   ".order-success__description",
             ) as HTMLElement;
-            if (actions?.onClick) {
+            if (actions?.onClick)
                   this.close.addEventListener("click", actions.onClick);
-            }
       }
 
       set total(value: number) {

@@ -11,7 +11,7 @@ export class Products {
       }
 
       setItems(items: IProduct[]): void {
-            this.items = [...items];
+            this.items = items;
             this.events.emit("products:changed");
       }
 

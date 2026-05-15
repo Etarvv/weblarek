@@ -14,18 +14,19 @@ export class BasketData {
       }
 
       addItem(item: IProduct) {
+            if (this.inBasket(item.id)) return;
             this.items.push(item);
-            this.events.emit("basket:changed", this.items);
+            this.events.emit("basket:changed");
       }
 
       delete(id: string) {
             this.items = this.items.filter((item) => item.id !== id);
-            this.events.emit("basket:changed", this.items);
+            this.events.emit("basket:changed");
       }
 
       clear(): void {
             this.items = [];
-            this.events.emit("basket:changed", this.items);
+            this.events.emit("basket:changed");
       }
 
       getPrice(): number {

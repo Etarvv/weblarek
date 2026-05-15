@@ -15,29 +15,31 @@ export class Buyer {
 
       setAddress(address: string): void {
             this.address = address;
+            this.events.emit("buyer:changed");
       }
 
       setPayment(payment: TPayment): void {
             this.payment = payment;
+            this.events.emit("buyer:changed");
       }
 
       setEmail(email: string): void {
             this.email = email;
+            this.events.emit("buyer:changed");
       }
 
       setPhone(phone: string): void {
             this.phone = phone;
+            this.events.emit("buyer:changed");
       }
 
       getBuyerData(): IBuyer {
-            const data: IBuyer = {
+            return {
                   email: this.email,
                   phone: this.phone,
                   address: this.address,
                   payment: this.payment,
             };
-            this.events.emit("user:changed");
-            return data;
       }
 
       clear(): void {
@@ -45,27 +47,18 @@ export class Buyer {
             this.phone = "";
             this.address = "";
             this.payment = null;
+            this.events.emit("buyer:changed");
       }
 
       validate(): TBuyerErrors {
             const errors: TBuyerErrors = {};
-
-            if (!this.email || this.email.trim() === "") {
+            if (!this.email || this.email.trim() === "")
                   errors.email = "Необходимо указать email";
-            }
-
-            if (!this.phone || this.phone.trim() === "") {
+            if (!this.phone || this.phone.trim() === "")
                   errors.phone = "Необходимо указать телефон";
-            }
-
-            if (!this.address || this.address.trim() === "") {
+            if (!this.address || this.address.trim() === "")
                   errors.address = "Укажите адрес";
-            }
-
-            if (this.payment === null) {
-                  errors.payment = "Не выбран вид оплаты";
-            }
-
+            if (this.payment === null) errors.payment = "Не выбран вид оплаты";
             return errors;
       }
 }

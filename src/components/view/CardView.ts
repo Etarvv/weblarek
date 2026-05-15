@@ -1,186 +1,103 @@
-import { IProduct } from "../../types";
 import { Component } from "../base/Component";
-import { categoryMap } from "../../utils/constants";
+import { IProduct } from "../../types";
 import { ensureElement } from "../../utils/utils";
 
-export type CardType = "catalog" | "preview" | "basket";
-
-export interface ICardOptions {
-      type: CardType;
-      onClick?: (event: MouseEvent) => void;
-      onRemove?: (event: MouseEvent) => void;
-}
-
-export interface ICardViewData extends IProduct {
+export interface ICardData extends IProduct {
       index?: number;
 }
 
-export class CardView extends Component<ICardViewData> {
-      protected _titleElement: HTMLElement;
-      protected _priceElement: HTMLElement;
+export abstract class BaseCard extends Component<ICardData> {
+      protected titleEl: HTMLElement;
+      protected priceEl: HTMLElement;
+      protected imageEl?: HTMLImageElement;
+      protected categoryEl?: HTMLElement;
+      protected descriptionEl?: HTMLElement;
+      protected buttonEl?: HTMLButtonElement;
 
-      protected _imageElement?: HTMLImageElement;
-      protected _categoryElement?: HTMLElement;
-      protected _textElement?: HTMLElement;
-
-      protected _indexElement?: HTMLElement;
-      protected _removeBtn?: HTMLButtonElement;
-      protected _actionBtn?: HTMLButtonElement;
-
-      protected readonly type: CardType;
-      private currentCategoryModifier?: string;
-
-      constructor(container: HTMLElement, options: ICardOptions) {
+      constructor(container: HTMLElement) {
             super(container);
-            this.type = options.type;
-
-            this._titleElement = ensureElement(".card__title", container);
-            this._priceElement = ensureElement(".card__price", container);
-
-            switch (this.type) {
-                  case "catalog":
-                        this._imageElement = ensureElement(
-                              ".card__image",
-                              container,
-                        ) as HTMLImageElement;
-                        this._categoryElement = ensureElement(
-                              ".card__category",
-                              container,
-                        );
-                        if (options.onClick) {
-                              container.addEventListener(
-                                    "click",
-                                    options.onClick,
-                              );
-                        }
-                        break;
-
-                  case "preview":
-                        this._imageElement = ensureElement(
-                              ".card__image",
-                              container,
-                        ) as HTMLImageElement;
-                        this._categoryElement = ensureElement(
-                              ".card__category",
-                              container,
-                        );
-                        this._textElement = ensureElement(
-                              ".card__text",
-                              container,
-                        );
-                        this._actionBtn = ensureElement(
-                              ".card__button",
-                              container,
-                        ) as HTMLButtonElement;
-                        if (options.onClick) {
-                              this._actionBtn.addEventListener(
-                                    "click",
-                                    options.onClick,
-                              );
-                        }
-                        break;
-
-                  case "basket":
-                        this._indexElement = ensureElement(
-                              ".basket__item-index",
-                              container,
-                        );
-                        this._removeBtn = ensureElement(
-                              ".card__button",
-                              container,
-                        ) as HTMLButtonElement;
-                        if (options.onRemove) {
-                              this._removeBtn.addEventListener(
-                                    "click",
-                                    options.onRemove,
-                              );
-                        }
-                        break;
-            }
+            this.titleEl = ensureElement(".card__title", container);
+            this.priceEl = ensureElement(".card__price", container);
+            this.imageEl = container.querySelector(
+                  ".card__image",
+            ) as HTMLImageElement;
+            this.categoryEl = container.querySelector(
+                  ".card__category",
+            ) as HTMLElement;
+            this.descriptionEl = container.querySelector(
+                  ".card__text",
+            ) as HTMLElement;
+            this.buttonEl = container.querySelector(
+                  ".card__button",
+            ) as HTMLButtonElement;
       }
 
-      // --- Сеттеры ---
       set title(value: string) {
-            this.setText(this._titleElement, value);
+            this.setText(this.titleEl, value);
       }
 
       set price(value: number | null) {
             const priceText = value === null ? "Бесценно" : `${value} синапсов`;
-            this.setText(this._priceElement, priceText);
-
-            if (this.type === "preview" && this._actionBtn) {
-                  if (value === null) {
-                        this.setDisabled(this._actionBtn, true);
-                        this.setText(this._actionBtn, "Недоступно");
-                  } else {
-                        this.setDisabled(this._actionBtn, false);
-                        this.setText(this._actionBtn, "В корзину");
-                  }
-            }
+            this.setText(this.priceEl, priceText);
       }
 
       set image(value: string) {
-            if (this._imageElement) {
-                  const alt = this._titleElement?.textContent ?? "Товар";
-                  this.setImage(this._imageElement, value, alt);
+            if (this.imageEl) {
+                  this.setImage(
+                        this.imageEl,
+                        value,
+                        this.titleEl.textContent ?? "Товар",
+                  );
             }
       }
 
       set category(value: string) {
-            if (this._categoryElement) {
-                  this.setText(this._categoryElement, value);
-                  const newModifier =
-                        categoryMap[value as keyof typeof categoryMap];
-
-                  if (this.currentCategoryModifier) {
-                        this.toggleClass(
-                              this._categoryElement,
-                              this.currentCategoryModifier,
-                              false,
-                        );
-                  }
-                  if (newModifier) {
-                        this.toggleClass(
-                              this._categoryElement,
-                              newModifier,
-                              true,
-                        );
-                        this.currentCategoryModifier = newModifier;
-                  } else {
-                        this.currentCategoryModifier = undefined;
-                  }
-            }
+            if (this.categoryEl) this.setText(this.categoryEl, value);
       }
 
-      set text(value: string) {
-            if (this._textElement) {
-                  this.setText(this._textElement, value);
-            }
-      }
-
-      set index(value: number) {
-            if (this._indexElement) {
-                  this.setText(this._indexElement, String(value));
-            }
+      set description(value: string) {
+            if (this.descriptionEl) this.setText(this.descriptionEl, value);
       }
 
       set buttonText(value: string) {
-            if (this._actionBtn) {
-                  this.setText(this._actionBtn, value);
-            }
-            if (this._removeBtn && this.type === "basket") {
-                  this.setText(this._removeBtn, value);
-            }
+            if (this.buttonEl) this.setText(this.buttonEl, value);
       }
 
       set buttonDisabled(value: boolean) {
-            if (this._actionBtn) {
-                  this.setDisabled(this._actionBtn, value);
-            }
+            if (this.buttonEl) this.setDisabled(this.buttonEl, value);
+      }
+}
+
+export class CatalogCard extends BaseCard {
+      constructor(container: HTMLElement, onClick: () => void) {
+            super(container);
+            this.container.addEventListener("click", onClick);
+      }
+}
+
+export class PreviewCard extends BaseCard {
+      constructor(container: HTMLElement, onAddToCart: () => void) {
+            super(container);
+            if (this.buttonEl)
+                  this.buttonEl.addEventListener("click", onAddToCart);
+      }
+}
+
+export class BasketCard extends BaseCard {
+      protected indexEl: HTMLElement;
+      protected removeBtn: HTMLButtonElement;
+
+      constructor(container: HTMLElement, onRemove: () => void) {
+            super(container);
+            this.indexEl = ensureElement(".basket__item-index", container);
+            this.removeBtn = ensureElement(
+                  ".card__button",
+                  container,
+            ) as HTMLButtonElement;
+            this.removeBtn.addEventListener("click", onRemove);
       }
 
-      render(data?: Partial<ICardViewData>): HTMLElement {
-            super.render(data);
-            return this.container;
+      set index(value: number) {
+            this.setText(this.indexEl, String(value));
       }
 }
