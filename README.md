@@ -86,69 +86,75 @@ Presenter - презентер содержит основную логику п
 `post(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<object>` - принимает объект с данными, которые будут переданы в JSON в теле запроса, и отправляет эти данные на ендпоинт переданный как параметр при вызове метода. По умолчанию выполняется `POST` запрос, но метод запроса может быть переопределен заданием третьего параметра при вызове.  
 `handleResponse(response: Response): Promise<object>` - защищенный метод проверяющий ответ сервера на корректность и возвращающий объект с данными полученный от сервера или отклоненный промис, в случае некорректных данных.
 
-#### Класс EventEmitter
-Брокер событий реализует паттерн "Наблюдатель", позволяющий отправлять события и подписываться на события, происходящие в системе. Класс используется для связи слоя данных и представления.
+### `EventEmitter`
+Брокер событий. Позволяет подписываться (`on`), генерировать события (`emit`) и создавать триггеры (`trigger`). Используется для всей коммуникации между слоями.
 
-Конструктор класса не принимает параметров.
+## Модели данных
 
-Поля класса:  
-`_events: Map<string | RegExp, Set<Function>>)` -  хранит коллекцию подписок на события. Ключи коллекции - названия событий или регулярное выражение, значения - коллекция функций обработчиков, которые будут вызваны при срабатывании события.
+### `Products`
+Управляет каталогом товаров.
+- `setItems(items)` - заменяет список, генерирует `products:changed`
+- `getItems()` - возвращает все товары
+- `getItemById(id)` - поиск товара
+- `setPreview(item)` - сохраняет выбранный товар, генерирует `preview:changed`
 
-Методы класса:  
-`on<T extends object>(event: EventName, callback: (data: T) => void): void` - подписка на событие, принимает название события и функцию обработчик.  
-`emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
-`trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
-### Данные и модели данных
-Все модели реализованы в папке src/components/models/. Они хранят состояние, управляют данными и предоставляют методы для их изменения.
+### `BasketData`
+Управляет корзиной.
+- `addItem(item)`, `delete(id)`, `clear()` - все изменения генерируют `basket:changed`
+- `getPrice()`, `getCountProduct()`, `inBasket(id)`
 
-#### Products – каталог товаров
-Поля:
+### `Buyer`
+Хранит данные покупателя: `email`, `phone`, `address`, `payment` .
+- сеттеры для каждого поля
+- `getBuyerData()` - возвращает объект `IBuyer`
+- `validate()` - возвращает объект с ошибками (если поле пустое)
+- `clear()` - сброс
 
-`items: IProduct[]` - все товары, полученные с сервера.
-`currentItem: IProduct | null` - товар, выбранный для просмотра в модальном окне.
+## Компоненты представления (View)
 
-Методы:
-`setItems(items: IProduct[]): void` - заменить весь каталог.
-`getItems(): IProduct[]` - получить все товары.
-`getItemById(id: string): IProduct | undefined` - найти товар по ID.
-`setPreview(item: IProduct): void` - установить товар для превью.
-`getPreview(): IProduct | null` - получить текущий превью-товар.
+### `Modal`
+Универсальное модальное окно.
+- `open()`, `close()` - генерируют `modal:open` / `modal:close`
+- `content` - сеттер для замены содержимого
 
-#### BasketData – корзина
-Поле:
-`items: IProduct[]` - товары, добавленные пользователем.
+### `Gallery`
+Контейнер для карточек на главной.
+- `catalog` - сеттер принимает массив HTMLElement и заменяет содержимое
 
-Методы:
-`getItems(): IProduct[]` - список товаров в корзине.
-`addItem(item: IProduct): void` - добавить товар.
-`delete(id: string): void` - удалить товар по ID.
-`clear(): void` - очистить корзину.
-`getPrice(): number` – общая стоимость.
-`getCountProduct(): number` - количество товаров.
-`inBasket(id: string): boolean` - проверка наличия товара в корзине.
+### `Header`
+Шапка с иконкой корзины и счётчиком.
+- `counter` - сеттер для отображения количества товаров
+- клик по корзине генерирует `basket:open`
 
-#### Buyer – данные покупателя
-Поля:
-`email, phone, address, payment (TPayment | null)`
-Сеттеры:
-`setEmail, setPhone, setAddress, setPayment`
-Геттеры и утилиты:
-`getBuyerData(): IBuyer` - собрать все данные в объект.
-`clear(): void` - сбросить все поля.
-Валидация:
-`validateEmail()` - проверка формата email.
-`validatePhone()` - проверка телефона.
-`validateAddress()` - адрес.
-`validatePayment()` - выбран ли способ оплаты.
-`validateBuyerData(): TBuyerErrors` - возвращает объект с ошибками для каждого невалидного поля.
+### `BasketView`
+Отображение корзины: список товаров, общая сумма, кнопка «Оформить».
+- `items` - массив HTMLElement (карточки корзины)
+- `total` - общая сумма
+- `disabled` - блокировка кнопки, если корзина пуста
+- кнопка генерирует `order:start`
 
-#### Слой API – WebLarekAPI
-Класс WebLarekAPI использует базовый Api для общения с сервером.
-Конструктор: `constructor(api: IApi)` – принимает экземпляр Api.
-Методы:
-`async getProducts(): Promise<IProduct[]>`
-→ `GET /product` → возвращает `response.items`(массив товаров).
+### `CardView`
+Универсальная карточка товара с тремя вариантами (type: `catalog`, `preview`, `basket`).
+- Поля: `title`, `price` (если null — «Бесценно»), `image`, `category` (с CSS-маппингом), `text` (описание), `index` (для корзины), `buttonText`, `buttonDisabled`
+- Для `catalog` и `preview` принимает `onClick`
+- Для `basket` принимает `onRemove`
 
-`async orderProducts(order: IOrder): Promise<IOrderResponse>`
-→ `POST /order` с телом `order` → возвращает `{ id, total }`.
+### `Order`
+Форма первого шага оформления (способ оплаты + адрес).
+- События при изменении полей: `order.payment:change`, `order.address:change`
+- Событие отправки: `order:submit`
+- Сеттеры: `payment`, `address`, `valid`, `errors`
 
+### `Contacts`
+Форма второго шага (email + телефон).
+- События: `contacts.email:change`, `contacts.phone:change`, `contacts:submit`
+- Сеттеры: `email`, `phone`, `valid`, `errors`
+
+### `SuccessInfo`
+Сообщение об успешной оплате. Принимает `total` и `onClick` для закрытия.
+
+## Слой API
+
+**`WebLarekAPI`** (наследует `Api`):
+- `getProducts()` → `GET /product` → возвращает `IProductResponse` (`{ items, total }`)
+- `orderProducts(order)` → `POST /order` → `IOrderResponse` (`{ id, total }`)

@@ -1,63 +1,71 @@
 import { TPayment, IBuyer } from "../../types/index.ts";
 import { TBuyerErrors } from "../../types/index.ts";
+import { IEvents } from "../base/Events.ts";
 
 export class Buyer {
-  private email: string = "";
-  private phone: string = "";
-  private address: string = "";
-  private payment: TPayment | null = null;
+      private email: string = "";
+      private phone: string = "";
+      private address: string = "";
+      private payment: TPayment | null = null;
+      protected events: IEvents;
 
-  setAddress(address: string): void {
-    this.address = address;
-  }
+      constructor(events: IEvents) {
+            this.events = events;
+      }
 
-  setPayment(payment: TPayment): void {
-    this.payment = payment;
-  }
+      setAddress(address: string): void {
+            this.address = address;
+      }
 
-  setEmail(email: string): void {
-    this.email = email;
-  }
+      setPayment(payment: TPayment): void {
+            this.payment = payment;
+      }
 
-  setPhone(phone: string): void {
-    this.phone = phone;
-  }
+      setEmail(email: string): void {
+            this.email = email;
+      }
 
-  getBuyerData(): IBuyer {
-    return {
-      email: this.email,
-      phone: this.phone,
-      address: this.address,
-      payment: this.payment,
-    };
-  }
+      setPhone(phone: string): void {
+            this.phone = phone;
+      }
 
-  clear(): void {
-    this.email = "";
-    this.phone = "";
-    this.address = "";
-    this.payment = null;
-  }
+      getBuyerData(): IBuyer {
+            const data: IBuyer = {
+                  email: this.email,
+                  phone: this.phone,
+                  address: this.address,
+                  payment: this.payment,
+            };
+            this.events.emit("user:changed");
+            return data;
+      }
 
-  validate(): TBuyerErrors {
-    const errors: TBuyerErrors = {};
+      clear(): void {
+            this.email = "";
+            this.phone = "";
+            this.address = "";
+            this.payment = null;
+      }
 
-    if (!this.email || this.email.trim() === "") {
-      errors.email = "Необходимо указать email";
-    }
+      validate(): TBuyerErrors {
+            const errors: TBuyerErrors = {};
 
-    if (!this.phone || this.phone.trim() === "") {
-      errors.phone = "Необходимо указать телефон";
-    }
+            if (!this.email || this.email.trim() === "") {
+                  errors.email = "Необходимо указать email";
+            }
 
-    if (!this.address || this.address.trim() === "") {
-      errors.address = "Укажите адрес";
-    }
+            if (!this.phone || this.phone.trim() === "") {
+                  errors.phone = "Необходимо указать телефон";
+            }
 
-    if (this.payment === null) {
-      errors.payment = "Не выбран вид оплаты";
-    }
+            if (!this.address || this.address.trim() === "") {
+                  errors.address = "Укажите адрес";
+            }
 
-    return errors;
-  }
+            if (this.payment === null) {
+                  errors.payment = "Не выбран вид оплаты";
+            }
+
+            return errors;
+      }
 }
