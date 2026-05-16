@@ -1,7 +1,12 @@
 import { Component } from "../base/Component";
 import { IEvents } from "../base/Events";
 
-export abstract class Form<T> extends Component<T> {
+type IFormState = {
+      valid: boolean;
+      errors: string;
+};
+
+export abstract class Form<T> extends Component<T & IFormState> {
       protected submitBtn: HTMLButtonElement;
       protected errorsEl: HTMLElement;
 
@@ -20,14 +25,15 @@ export abstract class Form<T> extends Component<T> {
 
             this.container.addEventListener("submit", (e) => {
                   e.preventDefault();
-                  if (!this.submitBtn.disabled)
+
+                  if (!this.submitBtn.disabled) {
                         this.events.emit(`${this.formName}:submit`);
+                  }
             });
       }
 
       protected onInputChange(field: keyof T, value: string) {
             this.events.emit(`${this.formName}.${String(field)}:change`, {
-                  field,
                   value,
             });
       }
@@ -40,13 +46,7 @@ export abstract class Form<T> extends Component<T> {
             this.setText(this.errorsEl, value);
       }
 
-      render(
-            state: Partial<T> & { valid?: boolean; errors?: string },
-      ): HTMLElement {
-            const { valid, errors, ...inputs } = state;
-            if (valid !== undefined) this.valid = valid;
-            if (errors !== undefined) this.errors = errors;
-            Object.assign(this, inputs);
-            return this.container;
+      render(state: Partial<T & IFormState>): HTMLElement {
+            return super.render(state);
       }
 }

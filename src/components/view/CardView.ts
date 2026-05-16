@@ -1,35 +1,27 @@
 import { Component } from "../base/Component";
 import { IProduct } from "../../types";
 import { ensureElement } from "../../utils/utils";
+import { IEvents } from "../base/Events";
+import { categoryMap } from "../../utils/constants";
 
 export interface ICardData extends IProduct {
       index?: number;
+      buttonText?: string;
+      buttonDisabled?: boolean;
 }
 
 export abstract class BaseCard extends Component<ICardData> {
       protected titleEl: HTMLElement;
       protected priceEl: HTMLElement;
-      protected imageEl?: HTMLImageElement;
-      protected categoryEl?: HTMLElement;
-      protected descriptionEl?: HTMLElement;
-      protected buttonEl?: HTMLButtonElement;
 
       constructor(container: HTMLElement) {
             super(container);
             this.titleEl = ensureElement(".card__title", container);
             this.priceEl = ensureElement(".card__price", container);
-            this.imageEl = container.querySelector(
-                  ".card__image",
-            ) as HTMLImageElement;
-            this.categoryEl = container.querySelector(
-                  ".card__category",
-            ) as HTMLElement;
-            this.descriptionEl = container.querySelector(
-                  ".card__text",
-            ) as HTMLElement;
-            this.buttonEl = container.querySelector(
-                  ".card__button",
-            ) as HTMLButtonElement;
+      }
+
+      set id(value: string) {
+            this.container.dataset.id = value;
       }
 
       set title(value: string) {
@@ -37,49 +29,117 @@ export abstract class BaseCard extends Component<ICardData> {
       }
 
       set price(value: number | null) {
-            const priceText = value === null ? "Бесценно" : `${value} синапсов`;
-            this.setText(this.priceEl, priceText);
-      }
-
-      set image(value: string) {
-            if (this.imageEl) {
-                  this.setImage(
-                        this.imageEl,
-                        value,
-                        this.titleEl.textContent ?? "Товар",
-                  );
-            }
-      }
-
-      set category(value: string) {
-            if (this.categoryEl) this.setText(this.categoryEl, value);
-      }
-
-      set description(value: string) {
-            if (this.descriptionEl) this.setText(this.descriptionEl, value);
-      }
-
-      set buttonText(value: string) {
-            if (this.buttonEl) this.setText(this.buttonEl, value);
-      }
-
-      set buttonDisabled(value: boolean) {
-            if (this.buttonEl) this.setDisabled(this.buttonEl, value);
+            this.setText(
+                  this.priceEl,
+                  value === null ? "Бесценно" : `${value} синапсов`,
+            );
       }
 }
 
 export class CatalogCard extends BaseCard {
-      constructor(container: HTMLElement, onClick: () => void) {
+      protected imageEl: HTMLImageElement;
+      protected categoryEl: HTMLElement;
+
+      constructor(
+            container: HTMLElement,
+            protected events: IEvents,
+      ) {
             super(container);
-            this.container.addEventListener("click", onClick);
+
+            this.imageEl = ensureElement(
+                  ".card__image",
+                  container,
+            ) as HTMLImageElement;
+
+            this.categoryEl = ensureElement(".card__category", container);
+
+            this.container.addEventListener("click", () => {
+                  this.events.emit("product:select", {
+                        id: this.container.dataset.id,
+                  });
+            });
+      }
+
+      set image(value: string) {
+            this.setImage(
+                  this.imageEl,
+                  value,
+                  this.titleEl.textContent ?? "Товар",
+            );
+      }
+
+      set category(value: string) {
+            this.setText(this.categoryEl, value);
+            Object.values(categoryMap).forEach((className) => {
+                  this.categoryEl.classList.remove(className);
+            });
+            const modifier = categoryMap[value as keyof typeof categoryMap];
+            if (modifier) {
+                  this.categoryEl.classList.add(modifier);
+            }
       }
 }
 
 export class PreviewCard extends BaseCard {
-      constructor(container: HTMLElement, onAddToCart: () => void) {
+      protected imageEl: HTMLImageElement;
+      protected categoryEl: HTMLElement;
+      protected descriptionEl: HTMLElement;
+      protected buttonEl: HTMLButtonElement;
+
+      constructor(
+            container: HTMLElement,
+            protected events: IEvents,
+      ) {
             super(container);
-            if (this.buttonEl)
-                  this.buttonEl.addEventListener("click", onAddToCart);
+
+            this.imageEl = ensureElement(
+                  ".card__image",
+                  container,
+            ) as HTMLImageElement;
+
+            this.categoryEl = ensureElement(".card__category", container);
+
+            this.descriptionEl = ensureElement(".card__text", container);
+
+            this.buttonEl = ensureElement(
+                  ".card__button",
+                  container,
+            ) as HTMLButtonElement;
+
+            this.buttonEl.addEventListener("click", () => {
+                  this.events.emit("preview:button-click");
+            });
+      }
+
+      set image(value: string) {
+            this.setImage(
+                  this.imageEl,
+                  value,
+                  this.titleEl.textContent ?? "Товар",
+            );
+      }
+
+      set category(value: string) {
+            this.setText(this.categoryEl, value);
+            Object.values(categoryMap).forEach((className) => {
+                  this.categoryEl.classList.remove(className);
+            });
+            const modifier = categoryMap[value as keyof typeof categoryMap];
+            if (modifier) {
+                  this.categoryEl.classList.add(modifier);
+            }
+      }
+
+      set description(value: string) {
+            this.setText(this.descriptionEl, value);
+      }
+
+      set buttonText(value: string) {
+            this.setText(this.buttonEl, value);
+      }
+
+      set buttonDisabled(value: boolean) {
+            this.setDisabled(this.buttonEl, value);
       }
 }
 
@@ -87,14 +147,24 @@ export class BasketCard extends BaseCard {
       protected indexEl: HTMLElement;
       protected removeBtn: HTMLButtonElement;
 
-      constructor(container: HTMLElement, onRemove: () => void) {
+      constructor(
+            container: HTMLElement,
+            protected events: IEvents,
+      ) {
             super(container);
+
             this.indexEl = ensureElement(".basket__item-index", container);
+
             this.removeBtn = ensureElement(
                   ".card__button",
                   container,
             ) as HTMLButtonElement;
-            this.removeBtn.addEventListener("click", onRemove);
+
+            this.removeBtn.addEventListener("click", () => {
+                  this.events.emit("basket:item-remove", {
+                        id: container.dataset.id,
+                  });
+            });
       }
 
       set index(value: number) {
